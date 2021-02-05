@@ -1,17 +1,16 @@
 const express = require('express')
 const cors = require('cors')
 const {MongoClient, ObjectID} = require('mongodb')
+require('dotenv').config()
 
 //Constants
-const CONNECTION_URI = "mongodb+srv://mahi:uRmqARfRAH5pV7HG@cluster0.s3vqo.mongodb.net/todoapp_db?retryWrites=true&w=majority"
-const PORT = 5001
 const app = express()
 let collection = null;
 
 //Mongo stuff
 async function run() {
     try {
-        const client = new MongoClient(CONNECTION_URI, { useUnifiedTopology: true })
+        const client = new MongoClient(process.env.CONNECTION_URI, { useUnifiedTopology: true })
         await client.connect()
         const database = client.db("todoapp_db")
         collection = database.collection("todoapp_collection")
@@ -109,4 +108,4 @@ app.delete("/api", (req, res) => {
     }
 })
 
-app.listen(PORT)
+app.listen(process.env.PORT)
