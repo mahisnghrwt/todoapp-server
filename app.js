@@ -1,7 +1,11 @@
 const express = require('express')
 const cors = require('cors')
-const {MongoClient, ObjectID} = require('mongodb')
+const {ObjectID} = require('mongodb')
+const mongoUtil = require('./mongoUtil')
 require('dotenv').config()
+const todo_route = require('./routes/todo_route')
+const todo_list_route = require('./routes/todo_list_route')
+
 
 //Constants
 const app = express()
@@ -9,103 +13,25 @@ let collection = null;
 
 //Mongo stuff
 async function run() {
-    try {
-        const client = new MongoClient(process.env.CONNECTION_URI, { useUnifiedTopology: true })
-        await client.connect()
-        const database = client.db("todoapp_db")
-        collection = database.collection("todoapp_collection")
-    } catch(error) {
-        console.log(error.message)
-    } finally {
-
-    }
+    mongoUtil.connect()
+    .then(() => {
+        collection = mongoUtil.getDb().collection("todoapp_collection")
+        todo_route.init()
+        todo_list_route.init()
+    })
 }
 
-run()
 app.use(cors())
 app.use(express.json())
+run()
 
 //Routes
-//Get all list name
-app.get("/api", (req, res) => {
-    if (typeof collection !== 'undefined') {
-        collection.find({}).toArray((err, result) => {
-            if (err) {
-                throw err
-            }
-            res.send(result)
-        })
-    }
-    else {
-        res.json({
-            message: "Some problem occured while asking for data from MongoDB."
-        })
-    }
-})
+todo_route.find(app)
+todo_route.findAll(app)
+todo_route.delete_(app)
+todo_route.update(app)
+todo_route.create(app)
 
-//Delete a list
-app.delete("/api/:id", (req, res) => {
-    const id = req.url.split("/")[2]
-    let query = {_id: new ObjectID(id)}
-    if (typeof collection !== 'undefined') {
-        collection.deleteOne(query, (err, obj) => {
-            if (err) {
-                throw err
-            }
-            res.json({message: `Item with id: ${id} has been deleted!`})
-        })
-    }
-    else {
-        //collection object is undefined
-        res.json({
-            message: "Some problem occured while asking for data from MongoDB."
-        })
-    }
-})
-
-//create a new list
-app.post("/api", (req, res) => {
-    const query = {
-        name: req.body.name
-    }
-    console.log(req.body)
-    if (typeof collection !== 'undefined') {
-        collection.insertOne(query, (err, obj) => {
-            if (err) {
-                throw err
-            }
-            res.json(obj)
-        })
-    }
-    else {
-        //collection object is undefined
-        res.json({
-            message: "Some problem occured while inserting data into MongoDB."
-        })
-    }
-})
-
-//delete multiple
-app.delete("/api", (req, res) => {
-    if (typeof collection !== 'undefined') {
-        let query = {
-            _id: {
-                $in: req.body.ids.map((x) => new ObjectID(x))
-            }
-        }
-        collection.deleteMany(query, (err, obj) => {
-            if (err) {
-                throw(err)
-            }
-        })
-        res.sendStatus(200)
-    }
-    else {
-        //collection object is undefined
-        res.json({
-            message: "Some problem occured while inserting data into MongoDB."
-        })
-    }
-})
+todo_list_route.listen(app)
 
 app.listen(process.env.PORT)
