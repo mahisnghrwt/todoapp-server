@@ -114,10 +114,5 @@ const update = express => {
 
 module.exports = {
     init,
-    findAll,
-    findFor, 
-    create,
-    update,
-    delete_,
     listen
 }

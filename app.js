@@ -1,6 +1,5 @@
 const express = require('express')
 const cors = require('cors')
-const {ObjectID} = require('mongodb')
 const mongoUtil = require('./mongoUtil')
 require('dotenv').config()
 const todo_route = require('./routes/todo_route')
@@ -26,12 +25,7 @@ app.use(express.json())
 run()
 
 //Routes
-todo_route.find(app)
-todo_route.findAll(app)
-todo_route.delete_(app)
-todo_route.update(app)
-todo_route.create(app)
-
+todo_route.listen(app)
 todo_list_route.listen(app)
 
 app.listen(process.env.PORT)

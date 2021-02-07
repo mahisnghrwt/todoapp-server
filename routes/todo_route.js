@@ -6,6 +6,15 @@ const init = () => {
     todo_items_collection = mongoUtil.getDb().collection("todo_items")
 }
 
+const listen = (express) => {
+    findAll(express)
+    find(express)
+    findFor(express)
+    create(express)
+    update(express)
+    delete_(express)
+}
+
 const findAll = (express) => {
     express.get("/api/todoItem", (req, res) => {
         todo_items_collection.find({}).toArray((err, result) => {
@@ -24,7 +33,7 @@ const find = (express) => {
 }
 
 const findFor = (express) => {
-    
+
 }
 
 const create = (express) => {
@@ -81,9 +90,5 @@ const update = (express) => {
 
 module.exports = {
     init,
-    find,
-    findAll,
-    create,
-    delete_,
-    update
+    listen
 }
