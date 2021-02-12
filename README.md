@@ -1,6 +1,7 @@
 # todoapp_server
 
 
-### Potential issues
-* Design schema for Collections
-* No validation of data
+### Todo
+[ ] Model data using Mongoose
+[ ] express-session for Session management
+[ ] Use mongo to store express-session data

@@ -5,7 +5,6 @@ require('dotenv').config()
 const todo_route = require('./routes/todo_route')
 const todo_list_route = require('./routes/todo_list_route')
 
-
 //Constants
 const app = express()
 let collection = null;
