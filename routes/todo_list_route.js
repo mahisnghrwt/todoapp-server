@@ -1,118 +1,110 @@
-const mongoUtil = require('../mongoUtil')
-const {ObjectID} = require('mongodb')
-let collection = null
-const COLLECTION = "todoapp_collection"
+const {User} = require('../model/user_model')
+const {TodoList} = require("../model/todo_list_model")
+const { ObjectID } = require('mongodb')
+
+//CONSTANTS
 const ENDPOINT = "/api"
 
-const init = () => {
-    collection = mongoUtil.getDb().collection(COLLECTION)
-}
-
 const listen = (express) => {
-    findAll(express)
-    findFor(express)
-    delete_(express)
-    create(express)
-    update(express)
+    _create(express)
+    _get(express)
+    _delete(express)
+    _update(express)
 }
 
-//findAll
-//GET req
-const findAll = express => {
-    express.get(ENDPOINT, (req, res) => {
-        if (collection == null) {
-            console.log(`collection null in findAll route.`)
-            res.json({message: "something went wrong!"})
-        }
+//Create a new todolist, for a user
+const _create = express => {
+    express.post(ENDPOINT, async (req, res) => {
+        if (!req.body.title)
+            return res.sendStatus(400)
 
-        collection.find({}).toArray((err, result) => {
-            if (err) throw err
-            res.json(result)
+            const user = await User.findOne({
+            email: req.session.user
         })
+        //this should not be possible
+        if (!user)
+            return res.sendStatus(301)
+        user.todo_lists.push(new TodoList({title: req.body.title}))
+        user.save((err) => {
+            if (err) {
+                res.sendStatus(500)
+                console.error(err)
+                return
+            }
+        })
+        res.json(user.todo_lists)
     })
 }
 
-//findFor
-//get req
-const findFor = express => {
-    express.get(ENDPOINT + "/:id", (req, res) => {
-        if (collection == null) {
-            console.log(`collection null in findAll route.`)
-            res.json({message: "something went wrong!"})
-        }
-
-        const id = req.url.split("/")[2]
-        const query = {
-            _id: new ObjectID(id)
-        }
-        collection.find(query).toArray((err, result) => {
-            if (err) throw err
-            res.json(result)
+const _get = express => {
+    express.get(ENDPOINT, async (req, res) => {
+        const user = await User.findOne({
+            email: req.session.user
         })
+        if (!user)
+            return res.sendStatus(301)
+        return res.json(user.todo_lists)
     })
 }
 
-//create
-//post req
-const create = express => {
-    express.post(ENDPOINT, (req, res) => {
-        if (collection == null) {
-            console.log(`collection null in findAll route.`)
-            res.json({message: "something went wrong!"})
-        }
-
-        const query = req.body
-
-        collection.createOne(query, (err, result) => {
-            if (err) throw err
-            res.json(result)
+const _delete = express => {
+    express.delete(ENDPOINT, async (req, res) => {
+        if (!req.body._id) 
+            return res.sendStatus(500)
+        const user = await User.findOne({
+            email: req.session.user
         })
+
+        if (!user)
+            return res.sendStatus(301)
+
+        if (!user.todo_lists.id(new ObjectID(req.body._id))) {
+            res.status(500)
+            res.json({
+                message: 'List not found!'
+            })
+            return
+        }
+        user.todo_lists.id(new ObjectID(req.body._id)).remove()
+        user.save((err) => {
+            if (err) {
+                res.sendStatus(500)
+                return console.error(err)
+            }
+        })
+        res.json(user.todo_lists)
     })
 }
 
-//delete
-//delete req
-const delete_ = express => {
-    express.delete(ENDPOINT + "/:id", (req, res) => {
-        if (collection == null) {
-            console.log(`collection null in findAll route.`)
-            res.json({message: "something went wrong!"})
+const _update = express => {
+    express.put(ENDPOINT, async (req, res) => {
+        if (!req.body._id || !req.body.title) {
+            return res.sendStatus(500)
         }
-
-        const id = req.url.split("/")[2]
-        const query = {
-            _id: new ObjectID(id)
-        }
-
-        collection.deleteOne(query, (err, result) => {
-            if (err) throw err
-            res.json(result)
+        let user = await User.findOne({
+            email: req.session.user
         })
-    })
-}
-
-//update
-//put req
-const update = express => {
-    express.put(ENDPOINT, (req, res) => {
-        if (collection == null) {
-            console.log(`collection null in findAll route.`)
-            res.json({message: "something went wrong!"})
+        if (!user) {
+            return res.sendStatus(301)
         }
-
-        const {_id, ...newVals} = req.body
-        const query = {
-            _id: new ObjectID(_id)
+        if (!user.todo_lists || !user.todo_lists.id(new ObjectID(req.body._id))) {
+            res.status(500)
+            res.json({
+                message: 'List _id not found!'
+            })
+            return
         }
-
-        collection.updateOne(query, newVals, (err, result) => {
-            if (err) throw err
-            res.json(result)
+        const index = user.todo_lists.findIndex(x => x._id == req.body._id)
+        user.todo_lists[index].title = req.body.title
+        user.save((err) => {
+            if (err) {
+                return console.error(err.errors)
+            }
         })
+        res.json(user.todo_lists)
     })
 }
 
 module.exports = {
-    init,
     listen
 }
