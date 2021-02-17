@@ -1,4 +1,4 @@
-const {User} = require('../model/user_model')
+const { User } = require('../model/user_model')
 const { OAuth2Client } = new require('google-auth-library')
 const google_oauth_client = new OAuth2Client(process.env.CLIENT_ID)
 
@@ -30,12 +30,14 @@ const create = (express) => {
                 const user = new User({
                     email: email
                 })
-                await user.save()
+                user.save()
+                .then(_ => {
+                    res.sendStatus(200)
+                })
             }
         } catch (e) {
             console.error(`Error occured while verifying token!`)
-            res.sendStatus(301)
-            return
+            res.sendStatus(401)
         }        
     })
 }

@@ -35,7 +35,6 @@ const authenticate = (req, res, next) => {
         console.log("Session created!")
         req.session.user = 'mahisnghrwt@gmail.com'
         res.sendStatus(200)
-        // res.end()
     }
 }
 

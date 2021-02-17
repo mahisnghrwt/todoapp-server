@@ -21,7 +21,7 @@ const create = express => {
         }
         const user = await User.findOne({email: req.session.user})
         if (!user) {
-            return res.status(301).json({
+            return res.status(401).json({
                 message: `User with email ${req.session.user} not found!`
             })
         }
@@ -51,14 +51,14 @@ const create = express => {
 
         user.save((err) => {
             if (err) {
-                console.log(err)
-                res.status(200).json({
-                    "message": "Validation error!"
+                console.error(err)
+                return res.status(500).json({
+                    "message": "Model validation error!"
                 })
             }
         })
 
-        res.json(user.todo_lists.todo_items)
+        res.json(user.todo_lists)
     })
 }
 
@@ -92,10 +92,9 @@ const get = express => {
             })
         }
 
-        res.json(user.todo_lists[index].todo_items)
+        res.json(user.todo_lists)
     })
 }
-
 
 //get specific item
 
@@ -127,7 +126,7 @@ const delete_ = express => {
             }
         })
 
-        res.sendStatus(200)
+        res.json(user.todo_lists)
     })
 }
 
@@ -141,7 +140,7 @@ const update = express => {
         }
         const user = await User.findOne({email: req.session.user})
         if (!user) {
-            return res.status(301).json({
+            return res.status(401).json({
                 message: `User with email ${req.session.user} not found!`
             })
         }
@@ -156,11 +155,6 @@ const update = express => {
         listIndex = user.todo_lists.findIndex((x) => x._id == req.body.todo_list_id)
         if (listIndex != -1)
             itemIndex = user.todo_lists[listIndex].todo_items.findIndex(x => x._id == req.body.todo_id)
-
-        user.todo_lists[listIndex].todo_items[itemIndex] = {
-            ...user.todo_lists[listIndex].todo_items[itemIndex],
-            ...req.body.data
-        }
 
         try {
             user.todo_lists[listIndex].todo_items[itemIndex] = {
@@ -185,7 +179,7 @@ const update = express => {
             }
         })
 
-        res.sendStatus(200)
+        res.json(user.todo_lists)
     })
 }
 
