@@ -1,30 +1,49 @@
 const express = require('express')
 const cors = require('cors')
-const mongoUtil = require('./mongoUtil')
+const session = require("express-session")
 require('dotenv').config()
-const todo_route = require('./routes/todo_route')
-const todo_list_route = require('./routes/todo_list_route')
 
-//Constants
+//routes
+const todo_list_route = require('./routes/todo_list_routes')
+const user_route = require('./routes/user_routes')
+const todo_item_route = require('./routes/todo_item_routes')
+
 const app = express()
-let collection = null;
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}))
+app.use(express.json())
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+        maxAge: 3600000
+    }
+}))
 
-//Mongo stuff
-async function run() {
-    mongoUtil.connect()
-    .then(() => {
-        collection = mongoUtil.getDb().collection("todoapp_collection")
-        todo_route.init()
-        todo_list_route.init()
-    })
+const authenticate = (req, res, next) => {
+    console.log(req.session)
+    if (req.session.user || req.url === "/api/auth/google") {
+        console.log("user authenticated!")
+        next()
+    }
+    else {
+        console.log("Session created!")
+        req.session.user = 'mahisnghrwt@gmail.com'
+        res.sendStatus(200)
+        // res.end()
+    }
 }
 
-app.use(cors())
-app.use(express.json())
-run()
+app.use(authenticate)
 
-//Routes
-todo_route.listen(app)
+//hook express with the routes
+user_route.listen(app)
 todo_list_route.listen(app)
+todo_item_route.listen(app)
 
 app.listen(process.env.PORT)

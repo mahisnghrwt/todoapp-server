@@ -4,14 +4,16 @@
 ### Data Model
 ```
 {
-    "user_id": ObjectID,
-    "user_email": string,
+    "_id": ObjectID,
+    "email": string,
     "todo_lists": [
         {
+            "_id": ObjectID,
             "title": string,
             "created_at": date,
             items: [
                 {
+                    "_id": ObjectID,
                     "title": string,
                     "completed": bool
                     "desc": string,
@@ -25,6 +27,6 @@
 ```
 
 ### Todo
-- [ ] Model data using Mongoose
+- [x] Model data using Mongoose
 - [x] express-session for Session management
 - [ ] Use mongo to store express-session data
