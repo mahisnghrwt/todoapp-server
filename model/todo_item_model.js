@@ -1,5 +1,5 @@
 const mongoose = require('../mongooseUtil').getConnection()
-const {Schema} = mongoose
+const { Schema } = mongoose
 
 const TodoItemSchema = new Schema({
     title: {
@@ -8,13 +8,14 @@ const TodoItemSchema = new Schema({
     },
     completed: {
         required: true,
-        default: true,
+        default: false,
         type: Boolean
     },
     desc: String,
     priority: {
         type: String,
         enum: ['low', 'moderate', 'high'],
+        default: 'moderate',
         required: true
     },
     created_at: {

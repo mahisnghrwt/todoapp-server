@@ -5,26 +5,29 @@
 ```
 {
     "_id": ObjectID,
-    "email": string,
+    "email": String,
     "todo_lists": [
         {
             "_id": ObjectID,
-            "title": string,
-            "created_at": date,
-            items: [
+            "title": String,
+            "created_at": Date,
+            todo_items: [
                 {
                     "_id": ObjectID,
-                    "title": string,
-                    "completed": bool
-                    "desc": string,
-                    "priority": enum["low" | "moderate" | "high"]
-                    "created_at": date,
+                    "title": String,
+                    "completed": Boolean
+                    "desc": String,
+                    "priority": enum['low', 'moderate', 'high']
+                    "created_at": Date,
                 }
             ]
         }
     ]
 }
 ```
+
+### Bugs/Known Issues
+- [ ] Model validation error in `Model.save()` causing sluggish response.
 
 ### Todo
 - [x] Model data using Mongoose
