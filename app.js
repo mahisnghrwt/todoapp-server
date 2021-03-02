@@ -32,11 +32,7 @@ const authenticate = (req, res, next) => {
         next()
     }
     else {
-        req.session.user = "mahisnghrwt@gmail.com"
-        req.session.userId = "603c2497d319fc53b4688cff"
-        // console.log("Authorization declined!")
-        // res
-        res.sendStatus(200)
+        res.sendStatus(401)
     }
 }
 
