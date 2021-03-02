@@ -26,15 +26,17 @@ const create = (express) => {
             const user = await User.findOne({
                 email
             })
+            req.session.userId = user._id
             if (!user) {
                 const user = new User({
                     email: email
                 })
                 user.save()
-                .then(_ => {
-                    res.sendStatus(200)
+                .then(user_ => {
+                    req.session.userId = user_.id
                 })
             }
+            res.sendStatus(200)
         } catch (e) {
             console.error(`Error occured while verifying token!`)
             res.sendStatus(401)

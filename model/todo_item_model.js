@@ -6,7 +6,7 @@ const TodoItemSchema = new Schema({
         type: String,
         required: true
     },
-    completed: {
+    compeleted: {
         required: true,
         default: false,
         type: Boolean

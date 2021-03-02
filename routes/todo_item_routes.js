@@ -1,6 +1,7 @@
 const {TodoItem} = require('../model/todo_item_model')
 const {User} = require('../model/user_model')
 const {ObjectID} = require('mongodb')
+const { TodoList } = require('../model/todo_list_model')
 
 const ENDPOINT = "/api/todo"
 
@@ -14,32 +15,19 @@ const listen = express => {
 //create todoItem
 const create = express => {
     express.post(ENDPOINT, async (req, res) => {
-        if (!req.body.data || !req.body.todo_list_id) {
+        if (!req.body.data || !req.body.todoListId) {
             return res.status(500).json({
-                message: 'todo_list_id or -data- object missing!'
+                message: 'data or todoListId missing!'
             })
         }
-        const user = await User.findOne({email: req.session.user})
-        if (!user) {
-            return res.status(401).json({
-                message: `User with email ${req.session.user} not found!`
-            })
-        }
-
-        if (!user.todo_lists) {
+        const todoList = await TodoList.findOne({user_id: req.session.userId, _id: req.body.todoListId})
+        if (!todoList) {
             return res.status(500).json({
-                message: `No todo_list found!`
+                message: `TodoList with id: ${req.body.todoListId} not found!`
             })
         }
-        const index = user.todo_lists.findIndex(x => x._id == req.body.todo_list_id)
-        if (index == -1) {
-            return res.status(500).json({
-                message: `todo_list with id: ${req.body.todo_list_id} not found!`
-            })
-        }
-
         try {
-            user.todo_lists[index].todo_items.push(new TodoItem(req.body.data))
+            todoList.todo_items.push(new TodoItem(req.body.data))
         } catch (err) {
             if (err) {
                 console.error(err)
@@ -49,50 +37,32 @@ const create = express => {
             }
         }
 
-        user.save((err) => {
-            if (err) {
-                console.error(err)
-                return res.status(500).json({
-                    "message": "Model validation error!"
-                })
-            }
+        await todoList.save(err => {
+            if (err) throw err
         })
 
-        res.json(user.todo_lists)
+        res.sendStatus(200)
     })
 }
 
 //get all items
 const get = express => {
-    express.get(ENDPOINT, async (req, res) => {
-        if (!req.body.todo_list_id) {
-            return res.status(500).json({
-                message: 'todo_list_id not found!'
-            })
-        }
+    const endpoint = "/api/:listId/:id"
+    express.get(endpoint, async (req, res) => {
+        const listId = req.url.split('/')[2]
+        const id = req.url.split('/')[3]
+        const todo = await TodoList.findById(listId).todo_items.findById(id)
+        if (!todo)
+            return res.status(404).json({message: `Todo: ${id} not found in TodoList: ${listId}`})
+        res.json(todo)
+    })
 
-        const user = await User.findOne({
-            email: req.session.user
-        })
-
-        if (!user) {
-            return res.status(500).json({
-                message: 'User not found!'
-            })
-        }
-
-        let index = -1;
-        if (user.todo_lists) {
-            index = user.todo_lists.findIndex(x => x._id == req.body.todo_list_id)
-        }
-
-        if (index == -1) {
-            return res.status(500).json({
-                message: 'todo_list not found!'
-            })
-        }
-
-        res.json(user.todo_lists)
+    express.get(ENDPOINT + "/:listId", async (req, res) => {
+        const listId = req.url.split('/')[3]
+        const todoItems = await TodoList.findById(listId).todo_items
+        if (!todoItems)
+            return res.status(404).json({message: `TodoList: ${listId} not found!`})
+        res.json(todoItems)
     })
 }
 
@@ -100,86 +70,48 @@ const get = express => {
 
 //delete item
 const delete_ = express => {
-    express.delete(ENDPOINT, async (req, res) => {
-        if (!req.body.todo_list_id || !req.body.todo_id)
-            return res.status(500).json({message: "todo_list_id and todo_id required!"})
+    const endpoint = "/api/:listId/:id"
+    express.delete(endpoint, async (req, res) => {
+        const listId = req.url.split('/')[2]
+        const id = req.url.split('/')[3]
         
-        const user = await User.findOne({
-            email: req.session.user
-        })
-
-        //If the user doesnt exist
-        if (!user) {
-            return res.status(500).json({
-                message: 'User not found!'
-            })
-        }
+        var todoList = await TodoList.findById(listId)
+        todoList.todo_items.remove({_id: id})
 
         try {
-            user.todo_lists.id(new ObjectID(req.body.todo_list_id)).todo_items.id(new ObjectID(req.body.todo_id)).remove()
+            todoList.save(err => {
+                if (err) throw err
+            })
         } catch (err) {
-            return res.sendStatus(500)
+            res.status(500).json({message: "Error occured while saving changes!"})
+            if (err) throw err
         }
-        user.save(err => {
-            if (err) {
-                return res.status(500).json({message: "Error occured while saving the changes inside the database!"})
-            }
-        })
 
-        res.json(user.todo_lists)
+        res.sendStatus(200)
     })
 }
 
 //update item
 const update = express => {
     express.put(ENDPOINT, async (req, res) => {
-        if (!req.body.data || !req.body.todo_list_id || !req.body.todo_id) {
+        if (!req.body.data || !req.body.todoListId || !req.body.todoId) {
             return res.status(500).json({
-                message: 'todo_list_id, todo_id and data required!'
+                message: 'todoListId, todoId and data attributes are required!'
             })
         }
-        const user = await User.findOne({email: req.session.user})
-        if (!user) {
-            return res.status(401).json({
-                message: `User with email ${req.session.user} not found!`
-            })
+        
+        var todoList = await TodoList.findById(todoListId)
+        const itemIndex = todoList.todo_items.findIndex(x => x._id == req.body.todoId)
+        todoList.todo_items[itemIndex] = {
+            ...todoList.todo_items[itemIndex],
+            ...req.body.data
         }
 
-        if (!user.todo_lists) {
-            return res.status(500).json({
-                message: `No todo_list found!`
-            })
-        }
-
-        let listIndex = -1, itemIndex = -1
-        listIndex = user.todo_lists.findIndex((x) => x._id == req.body.todo_list_id)
-        if (listIndex != -1)
-            itemIndex = user.todo_lists[listIndex].todo_items.findIndex(x => x._id == req.body.todo_id)
-
-        try {
-            user.todo_lists[listIndex].todo_items[itemIndex] = {
-                ...user.todo_lists[listIndex].todo_items[itemIndex],
-                ...req.body.data
-            }
-        } catch (err) {
-            if (err) {
-                console.error(err)
-                return res.status(500).json({
-                    message: `Error occurred while validating TodoItem model!`
-                })
-            }
-        }
-
-        user.save((err) => {
-            if (err) {
-                console.log(err)
-                res.status(200).json({
-                    "message": "Validation error!"
-                })
-            }
+        todoList.save(err => {
+            if (err) throw err
         })
 
-        res.json(user.todo_lists)
+        res.sendStatus(200)
     })
 }
 

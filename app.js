@@ -26,14 +26,16 @@ app.use(session({
 }))
 
 const authenticate = (req, res, next) => {
-    console.log(req.session)
+    console.log(req.url)
     if (req.session.user || req.url === "/api/auth/google") {
         console.log("user authenticated!")
         next()
     }
     else {
-        console.log("Session created!")
-        req.session.user = 'mahisnghrwt@gmail.com'
+        req.session.user = "mahisnghrwt@gmail.com"
+        req.session.userId = "603c2497d319fc53b4688cff"
+        // console.log("Authorization declined!")
+        // res
         res.sendStatus(200)
     }
 }

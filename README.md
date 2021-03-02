@@ -33,3 +33,5 @@
 - [x] Model data using Mongoose
 - [x] express-session for Session management
 - [ ] Use mongo to store express-session data
+- [ ] Store sorting preferences inside DB, create new Schema for user preferences.
+- [x] Split todoList and user schemas
