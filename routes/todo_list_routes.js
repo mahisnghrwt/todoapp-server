@@ -27,15 +27,11 @@ const create = express => {
                 message: `${req.session.user} not found!`
             })       
 
-        const todoList = new TodoList({user_id: new ObjectID(req.session.userId), title: req.body.title})
-        try {
-            todoList.save()
-            .then(_ => {
-                res.sendStatus(200)
-            })
-        } catch (err) {
+        const todoList = new TodoList({user_id: new ObjectID(user._id), title: req.body.title})
+        todoList.save(err => {
             if (err) throw err
-        }
+        })
+        res.json(todoList)
     })
 }
 
@@ -58,22 +54,26 @@ const getSingle = express => {
 //Delete a requested todo_list
 const delete_ = express => {
     express.delete(ENDPOINT + "/:id", async (req, res) => {
+        console.log('hitting todoList delete route!')
         const id = req.url.split("/")[2]
         TodoList.deleteOne({_id: id})
         .then(_ => res.sendStatus(200))
+        .catch(err => console.error(err))
     })
 }
 
 //Update a todo_list, 'title' is the only field that can be updated
 const update = express => {
     express.put(ENDPOINT, async (req, res) => {
-        if (!req.body.id || !req.body.title) {
-            return res.sendStatus(500)
-        }
+        if (!req.body.id)
+            return res.sendStatus(400)
         var todoList = await TodoList.findById(req.body.id)
         if (!todoList)
             return res.status(500).json({ message: 'todoList not found!' })
-        todoList.title = req.body.title
+        if (req.body.title)
+            todoList.title = req.body.title
+        if (req.body.sort)
+            todoList.sort = req.body.sort
         var updatedList
         try {
             updatedList = await todoList.save()
@@ -83,7 +83,10 @@ const update = express => {
                 throw err
             }
         }
-        res.sendStatus(200)
+        if (updatedList)
+            res.json(updatedList)
+        else
+            res.status(500)
     })
 }
 

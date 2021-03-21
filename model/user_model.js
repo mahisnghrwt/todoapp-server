@@ -1,6 +1,5 @@
 const mongoose = require('../mongooseUtil').getConnection()
 const { Schema } = mongoose
-const { TodoListSchema } = require('./todo_list_model')
 
 const userSchema = new Schema({
     email: String,
@@ -11,7 +10,7 @@ const userSchema = new Schema({
     sort: {
         type: String,
         required: true,
-        enum: ['none', 'alphabetical', 'priority', 'pending'],
+        enum: ['none', 'title.asc', 'title.desc', 'highPriorityCount.asc', 'highPriorityCount.desc', 'pendingCount.asc', 'pendingCount.desc', 'created_at.asc', 'created_at.desc'],
         default: 'none'
     }
 })

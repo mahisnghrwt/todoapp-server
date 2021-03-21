@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const session = require("express-session")
+const {memoryStore} = require('./utility')
 require('dotenv').config()
 
 //routes
@@ -15,6 +16,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use(session({
+    store: memoryStore,
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -26,9 +28,7 @@ app.use(session({
 }))
 
 const authenticate = (req, res, next) => {
-    console.log(req.url)
     if (req.session.user || req.url === "/api/auth/google") {
-        console.log("user authenticated!")
         next()
     }
     else {

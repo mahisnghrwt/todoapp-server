@@ -1,9 +1,10 @@
 const {TodoItem} = require('../model/todo_item_model')
-const {User} = require('../model/user_model')
-const {ObjectID} = require('mongodb')
-const { TodoList } = require('../model/todo_list_model')
+const {TodoList} = require('../model/todo_list_model')
 
 const ENDPOINT = "/api/todo"
+const GET_ENDPOINT = ENDPOINT + "/:listId" 
+const GET_SINGLE_ENDPOINT = ENDPOINT + '/api/:listId/:id'
+const DELETE_ENDPOINT = ENDPOINT + '/delete'
 
 const listen = express => {
     get(express)
@@ -15,10 +16,8 @@ const listen = express => {
 //create todoItem
 const create = express => {
     express.post(ENDPOINT, async (req, res) => {
-        if (!req.body.data || !req.body.todoListId) {
-            return res.status(500).json({
-                message: 'data or todoListId missing!'
-            })
+        if (!req.body.todo || !req.body.todoListId) {
+            return res.sendStatus(400)
         }
         const todoList = await TodoList.findOne({user_id: req.session.userId, _id: req.body.todoListId})
         if (!todoList) {
@@ -26,29 +25,20 @@ const create = express => {
                 message: `TodoList with id: ${req.body.todoListId} not found!`
             })
         }
-        try {
-            todoList.todo_items.push(new TodoItem(req.body.data))
-        } catch (err) {
-            if (err) {
-                console.error(err)
-                return res.status(500).json({
-                    message: `Error occurred while validating TodoItem model!`
-                })
-            }
-        }
 
-        await todoList.save(err => {
+        const newTodo = new TodoItem({...req.body.todo})
+        todoList.todo_items.push(newTodo)
+        todoList.save(err => {
             if (err) throw err
         })
 
-        res.sendStatus(200)
+        res.json(newTodo)
     })
 }
 
 //get all items
 const get = express => {
-    const endpoint = "/api/:listId/:id"
-    express.get(endpoint, async (req, res) => {
+    express.get(GET_SINGLE_ENDPOINT, async (req, res) => {
         const listId = req.url.split('/')[2]
         const id = req.url.split('/')[3]
         const todo = await TodoList.findById(listId).todo_items.findById(id)
@@ -57,7 +47,7 @@ const get = express => {
         res.json(todo)
     })
 
-    express.get(ENDPOINT + "/:listId", async (req, res) => {
+    express.get(GET_ENDPOINT, async (req, res) => {
         const listId = req.url.split('/')[3]
         const todoItems = await TodoList.findById(listId).todo_items
         if (!todoItems)
@@ -66,26 +56,24 @@ const get = express => {
     })
 }
 
-//get specific item
 
 //delete item
 const delete_ = express => {
-    const endpoint = "/api/:listId/:id"
-    express.delete(endpoint, async (req, res) => {
-        const listId = req.url.split('/')[2]
-        const id = req.url.split('/')[3]
-        
+    express.post(DELETE_ENDPOINT, async (req, res) => {
+        const listId = req.body.todoListId
+        const id = req.body.todoId
+        if (!listId || !id) {
+            return res.sendStatus(400)
+        }
+
         var todoList = await TodoList.findById(listId)
         todoList.todo_items.remove({_id: id})
-
-        try {
-            todoList.save(err => {
-                if (err) throw err
-            })
-        } catch (err) {
-            res.status(500).json({message: "Error occured while saving changes!"})
-            if (err) throw err
-        }
+        todoList.save(err => {
+            if (err) {
+                res.sendStatus(500)
+                return console.error(err)
+            }
+        })
 
         res.sendStatus(200)
     })
@@ -94,24 +82,20 @@ const delete_ = express => {
 //update item
 const update = express => {
     express.put(ENDPOINT, async (req, res) => {
-        if (!req.body.data || !req.body.todoListId || !req.body.todoId) {
-            return res.status(500).json({
-                message: 'todoListId, todoId and data attributes are required!'
-            })
-        }
-        
-        var todoList = await TodoList.findById(todoListId)
-        const itemIndex = todoList.todo_items.findIndex(x => x._id == req.body.todoId)
-        todoList.todo_items[itemIndex] = {
-            ...todoList.todo_items[itemIndex],
-            ...req.body.data
-        }
+        if (!req.body.todo || !req.body.todoListId)
+            return res.sendStatus(400)
+        var todoIndex = -1
+        const todoList = await TodoList.findOne({user_id: req.session.userId, _id: req.body.todoListId})
+        if (todoList)
+            todoIndex = todoList.todo_items.findIndex(x => x._id == req.body.todo._id)
+        if (todoIndex == -1) return res.sendStatus(500)
 
+        todoList.todo_items[todoIndex] = req.body.todo
+        const updatedTodo = todoList.todo_items[todoIndex]
         todoList.save(err => {
             if (err) throw err
         })
-
-        res.sendStatus(200)
+        res.json(updatedTodo)
     })
 }
 

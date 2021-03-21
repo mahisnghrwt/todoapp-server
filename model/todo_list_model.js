@@ -15,7 +15,7 @@ const TodoListSchema = new Schema({
     sort: {
         type: String,
         required: true,
-        enum: ['none', 'age', 'priority'],
+        enum: ['none', 'created_at.asc', 'created_at.desc', 'priority.asc', 'priority.desc'],
         default: 'none'
     },
     todo_items: [TodoItemSchema]
