@@ -39,8 +39,6 @@ const create = (express) => {
             })
             //Get the user email from payload
             const {email} = ticket.getPayload()
-            //Set email inside session
-            req.session.user = email
             //If user email doesn't exist in the database, then register it
             var user = await User.findOne({
                 email
@@ -58,16 +56,17 @@ const create = (express) => {
             }
 
             //Check if the user has an active session
-            if (activeUsers.has(req.session.user)) {
-                //Delete the previous session
-                memoryStore.destroy(activeUsers.get(req.session.user), err => {
-                    if (err)
-                        throw err
-                })
-            }
-            //Set the user as active
-            activeUsers.set(req.session.user, req.sessionID)
+            // if (activeUsers.has(email)) {
+            //     //Delete the previous session
+            //     memoryStore.destroy(activeUsers.get(email), err => {
+            //         if (err)
+            //             throw err
+            //     })
+            // }
+            // //Set the user as active
+            // activeUsers.set(email, req.sessionID)
 
+            req.session.user = email
             req.session.userId = user._id
 
             console.log('User logged in: \n', 'req.session.userId: ', req.session.userId, ', req.session.user: ', req.session.user)

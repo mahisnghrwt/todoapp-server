@@ -32,6 +32,7 @@ const authenticate = (req, res, next) => {
         next()
     }
     else {
+        console.log(`~ Tried to contact ${req.url}, replied with 401.`)
         res.sendStatus(401)
     }
 }

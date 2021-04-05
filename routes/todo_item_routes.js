@@ -82,6 +82,7 @@ const delete_ = express => {
 //update item
 const update = express => {
     express.put(ENDPOINT, async (req, res) => {
+        console.log(req.body)
         if (!req.body.todo || !req.body.todoListId)
             return res.sendStatus(400)
         var todoIndex = -1

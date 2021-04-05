@@ -2,11 +2,10 @@ const {User} = require('../model/user_model')
 const {TodoList} = require("../model/todo_list_model")
 const { ObjectID } = require('mongodb')
 
-//CONSTANTS
 const ENDPOINT = "/api"
 
 const listen = (express) => {
-    //response from endpoints?
+    // response from endpoints?
     create(express)
     get(express)
     getSingle(express)
@@ -14,7 +13,7 @@ const listen = (express) => {
     update(express)
 }
 
-//Create a new todolist, for a user
+// Create a new todolist, for a user
 const create = express => {
     express.post(ENDPOINT, async (req, res) => {
         if (!req.body.title) return res.sendStatus(400)
@@ -35,7 +34,7 @@ const create = express => {
     })
 }
 
-//Fetch all the todo_lists for a user
+// Fetch all the todo_lists for a user
 const get = express => {
     express.get(ENDPOINT, async (req, res) => {
         const todoLists = await TodoList.find({user_id: new ObjectID(req.session.userId)})
@@ -51,7 +50,7 @@ const getSingle = express => {
     })
 }
 
-//Delete a requested todo_list
+// Delete a requested todo_list
 const delete_ = express => {
     express.delete(ENDPOINT + "/:id", async (req, res) => {
         console.log('hitting todoList delete route!')

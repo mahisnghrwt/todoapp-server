@@ -1,5 +1,6 @@
 const mongoose = require('../mongooseUtil').getConnection()
 const { Schema } = mongoose
+const {TodoActivitySchema} = require('./todo_activity_model')
 
 const TodoItemSchema = new Schema({
     title: {
@@ -21,7 +22,14 @@ const TodoItemSchema = new Schema({
     created_at: {
         type: Date,
         default: Date.now
-    }
+    },
+    type: {
+        type: String,
+        enum: ['regular', 'recurring'],
+        default: 'regular',
+        required: true
+    },
+    recurring_activity: [TodoActivitySchema]
 })
 
 const TodoItem = mongoose.model('TodoItem', TodoItemSchema)
